@@ -1,0 +1,46 @@
+bundle:
+  name: nordpool-electricity-prices
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Unity Catalog catalog
+    default: main
+  schema_name:
+    description: Environment-specific target schema
+    default: nordpool_dev
+  window_days_back:
+    description: API window days before today
+    default: "2"
+  window_days_forward:
+    description: API window days after today
+    default: "2"
+  api_base_url:
+    description: Elering API endpoint
+    default: https://dashboard.elering.ee/api/nps/price
+  pipeline_development:
+    description: Lakeflow development mode
+    default: "true"
+  schedule_pause_status:
+    description: Schedule state
+    default: PAUSED
+
+  targets:
+    dev:
+      mode: development
+      default: true
+      variables:
+        catalog: main
+        schema_name: nordpool_dev
+        pipeline_development: "true"
+        schedule_pause_status: PAUSED
+
+    prod:
+      mode: production
+      variables:
+        catalog: main
+        schema_name: nordpool
+        pipeline_development: "false"
+        schedule_pause_status: UNPAUSED

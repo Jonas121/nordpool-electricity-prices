@@ -1,0 +1,27 @@
+resources:
+  jobs:
+    nordpool_daily_job:
+      name: nordpool-daily-${bundle.target}
+      schedule:
+        quartz_cron_expression: 0 0 15 * * ?
+        timezone_id: Europe/Vilnius
+        pause_status: ${var.schedule_pause_status}
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: ingest_api_to_landing
+          notebook_task:
+            notebook_path: ../src/ingest_nordpool_landing.py
+            base_parameters:
+              window_days_back: ${var.window_days_back}
+              window_days_forward: ${var.window_days_forward}
+          environment_key: default
+
+        - task_key: refresh_lakeflow_pipeline
+          depends_on:
+            - task_key: ingest_api_to_landing
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.nordpool_pipeline.id}
+      environments:
+        - environment_key: default
+          spec:
+            client: "2"

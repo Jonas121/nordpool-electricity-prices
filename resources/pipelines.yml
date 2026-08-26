@@ -1,0 +1,22 @@
+resources:
+  pipelines:
+    nordpool_pipeline:
+      name: nordpool-${bundle.target}
+      catalog: ${var.catalog}
+      target: ${var.schema_name}
+      serverless: true
+      development: ${var.pipeline_development}
+      continuous: false
+      photon: true
+      libraries:
+        - file:
+            path: ../src/pipelines/bronze_nordpool.py
+        - file:
+            path: ../src/pipelines/silver_nordpool.py
+        - file:
+            path: ../src/nordpool_api.py
+      configuration:
+        nordpool.landing_table: ${var.catalog}.${var.schema_name}.landing_nordpool_api_batches
+        nordpool.window_days_back: ${var.window_days_back}
+        nordpool.window_days_forward: ${var.window_days_forward}
+        nordpool.api_base_url: ${var.api_base_url}

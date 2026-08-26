@@ -9,11 +9,17 @@ resources:
       max_concurrent_runs: 1
       tasks:
         - task_key: ingest_api_to_landing
-          notebook_task:
-            notebook_path: ../src/ingest_nordpool_landing.py
-            base_parameters:
-              window_days_back: ${var.window_days_back}
-              window_days_forward: ${var.window_days_forward}
+          spark_python_task:
+            python_file: ../src/ingest_nordpool_landing.py
+            parameters:
+              - --landing-table
+              - ${var.catalog}.${var.schema_name}.landing_nordpool_api_batches
+              - --days-back
+              - ${var.window_days_back}
+              - --days-forward
+              - ${var.window_days_forward}
+              - --api-base-url
+              - ${var.api_base_url}
           environment_key: default
 
         - task_key: refresh_lakeflow_pipeline

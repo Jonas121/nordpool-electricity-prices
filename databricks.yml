@@ -7,7 +7,7 @@ include:
 variables:
   catalog:
     description: Unity Catalog catalog
-    default: main
+    default: workspace
 
   schema_name:
     description: Environment-specific target schema
@@ -39,7 +39,7 @@ targets:
     default: true
 
     variables:
-      catalog: main
+      catalog: workspace
       schema_name: nordpool_dev
       window_days_back: "2"
       window_days_forward: "2"
@@ -51,7 +51,7 @@ targets:
     mode: production
 
     variables:
-      catalog: main
+      catalog: workspace
       schema_name: nordpool
       window_days_back: "2"
       window_days_forward: "2"

@@ -8,39 +8,53 @@ variables:
   catalog:
     description: Unity Catalog catalog
     default: main
+
   schema_name:
     description: Environment-specific target schema
     default: nordpool_dev
-  window_days_back:
-    description: API window days before today
+
+  days_back:
+    description: Number of days before today
     default: "2"
-  window_days_forward:
-    description: API window days after today
+
+  days_forward:
+    description: Number of days after today
     default: "2"
+
   api_base_url:
     description: Elering API endpoint
     default: https://dashboard.elering.ee/api/nps/price
+
   pipeline_development:
-    description: Lakeflow development mode
+    description: Lakeflow pipeline development mode
     default: "true"
+
   schedule_pause_status:
-    description: Schedule state
+    description: Job schedule state
     default: PAUSED
 
-  targets:
-    dev:
-      mode: development
-      default: true
-      variables:
-        catalog: main
-        schema_name: nordpool_dev
-        pipeline_development: "true"
-        schedule_pause_status: PAUSED
+targets:
+  dev:
+    mode: development
+    default: true
 
-    prod:
-      mode: production
-      variables:
-        catalog: main
-        schema_name: nordpool
-        pipeline_development: "false"
-        schedule_pause_status: UNPAUSED
+    variables:
+      catalog: main
+      schema_name: nordpool_dev
+      days_back: "2"
+      days_forward: "2"
+      api_base_url: https://dashboard.elering.ee/api/nps/price
+      pipeline_development: "true"
+      schedule_pause_status: PAUSED
+
+  prod:
+    mode: production
+
+    variables:
+      catalog: main
+      schema_name: nordpool
+      days_back: "2"
+      days_forward: "2"
+      api_base_url: https://dashboard.elering.ee/api/nps/price
+      pipeline_development: "false"
+      schedule_pause_status: UNPAUSED

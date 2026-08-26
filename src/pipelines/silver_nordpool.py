@@ -24,7 +24,7 @@ from pyspark.sql import functions as F
 )
 @dp.expect_or_drop(
     "valid_fetched_at",
-    "fetched_at_utc IS NOT NULL AND fetched_at_utc <> ''",
+    "fetched_at IS NOT NULL",
 )
 def stg_silver_nordpool():
     return (

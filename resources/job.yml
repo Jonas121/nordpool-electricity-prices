@@ -13,7 +13,7 @@ resources:
             python_file: ../src/ingest_nordpool_landing.py
             parameters:
               - --landing-table
-              - ${var.catalog}.${var.schema_name}.landing_nordpool_api_batches
+              - ${var.catalog}.${var.schema_name}.${var.landing_table}
               - --days-back
               - ${var.window_days_back}
               - --days-forward

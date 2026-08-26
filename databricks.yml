@@ -13,6 +13,10 @@ variables:
     description: Environment-specific target schema
     default: nordpool_dev
 
+  landing_table:
+    description: Elering API data landing table
+    default: landing_nordpool_api_batches  
+
   window_days_back:
     description: Number of days before today
     default: "2"

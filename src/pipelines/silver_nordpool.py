@@ -1,10 +1,14 @@
 from pyspark import pipelines as dp
 from pyspark.sql import functions as F
+from pyspark.sql.window import Window
 
 
-@dp.temporary_view(
-    name="stg_silver_nordpool",
-    comment="Validated and typed Nord Pool observations from bronze.",
+@dp.materialized_view(
+    name="silver_nordpool_prices",
+    comment=(
+        "Validated current Nord Pool price per country and delivery "
+        "timestamp. The latest API observation is retained."
+    ),
 )
 @dp.expect_or_drop(
     "valid_country",
@@ -24,11 +28,14 @@ from pyspark.sql import functions as F
 )
 @dp.expect_or_drop(
     "valid_fetched_at",
-    "fetched_at IS NOT NULL",
+    "fetched_at_utc IS NOT NULL AND fetched_at_utc <> ''",
 )
-def stg_silver_nordpool():
-    return (
-        dp.read_stream("bronze_nordpool_prices")
+def silver_nordpool_prices():
+
+    bronze_df = dp.read("bronze_nordpool_prices")
+
+    typed_df = (
+        bronze_df
         .withColumn(
             "fetched_at",
             F.to_timestamp("fetched_at_utc"),
@@ -37,8 +44,8 @@ def stg_silver_nordpool():
             "price_timestamp_utc",
             F.to_timestamp(
                 F.from_unixtime(
-                    F.col("price_timestamp")
-                )
+                    F.col("price_timestamp"),
+                ),
             ),
         )
         .withColumn(
@@ -56,6 +63,30 @@ def stg_silver_nordpool():
             "price_hour_vilnius",
             F.hour("price_timestamp_vilnius"),
         )
+    )
+
+    latest_record_window = (
+        Window
+        .partitionBy(
+            "country",
+            "price_timestamp",
+        )
+        .orderBy(
+            F.col("fetched_at").desc(),
+            F.col("batch_id").desc(),
+        )
+    )
+
+    return (
+        typed_df
+        .withColumn(
+            "_row_number",
+            F.row_number().over(latest_record_window),
+        )
+        .filter(
+            F.col("_row_number") == 1
+        )
+        .drop("_row_number")
         .select(
             "country",
             "price_timestamp",
@@ -71,27 +102,3 @@ def stg_silver_nordpool():
             "request_window_days_forward",
         )
     )
-
-
-dp.create_streaming_table(
-    name="silver_nordpool_prices",
-    comment=(
-        "Latest valid price per country and price timestamp. "
-        "Later API observations replace earlier observations."
-    ),
-)
-
-
-dp.create_auto_cdc_flow(
-    target="silver_nordpool_prices",
-    source="stg_silver_nordpool",
-    keys=[
-        "country",
-        "price_timestamp",
-    ],
-    sequence_by=F.struct(
-        F.col("fetched_at"),
-        F.col("batch_id"),
-    ),
-    stored_as_scd_type=1,
-)

@@ -70,7 +70,7 @@ def quarantine_reason_expression():
 @dp.expect_all(VALIDATION_RULES)
 def stg_nordpool_silver_base():
     return (
-        dp.read_stream("bronze_nordpool_prices")
+        dp.read("bronze_nordpool_prices")
         .withColumn(
             "fetched_at",
             F.to_timestamp("fetched_at_utc"),
@@ -154,11 +154,11 @@ def stg_nordpool_silver_base():
     )
 
 
-@dp.table(
+@dp.materialized_view(
     name="silver_nordpool_prices_quarantine",
     comment=(
-        "Append-only invalid Nord Pool observations retained for "
-        "investigation, source troubleshooting, and reprocessing."
+        "Invalid Nord Pool observations retained for investigation "
+        "and reprocessing."
     ),
 )
 @dp.expect(
@@ -167,7 +167,7 @@ def stg_nordpool_silver_base():
 )
 def silver_nordpool_prices_quarantine():
     return (
-        dp.read_stream("stg_nordpool_silver_base")
+        dp.read("stg_nordpool_silver_base")
         .filter(~F.col("is_valid"))
         .select(
             "batch_id",

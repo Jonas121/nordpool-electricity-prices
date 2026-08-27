@@ -111,15 +111,10 @@ databricks auth login --host https://<your-workspace-host>
 ### Validate and deploy
 
 ```bash
+export BUNDLE_VAR_alert_email="your-alert-recipient@example
 databricks bundle validate -t dev
 databricks bundle deploy -t dev
 databricks bundle run nordpool_daily_job -t dev
-```
-
-Before deploying the Production target add failure notifications email:
-
-```bash
-export BUNDLE_VAR_alert_email="your-alert-recipient@example.com"
 ```
 
 The scheduled workflow runs in this order:

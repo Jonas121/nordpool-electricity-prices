@@ -11,63 +11,97 @@ from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
 
-VALIDATION_RULES = {
-    "valid_country": "country IN ('EE', 'FI', 'LT', 'LV')",
-    "valid_price_timestamp": (
-        "price_timestamp IS NOT NULL AND price_timestamp > 0"
-    ),
-    "valid_price": (
-        "price IS NOT NULL AND price BETWEEN -500 AND 4000"
-    ),
-    "valid_batch_id": (
-        "batch_id IS NOT NULL AND batch_id <> ''"
-    ),
-    "valid_fetched_at": (
-        "fetched_at IS NOT NULL"
-    ),
-}
+VALID_COUNTRIES = ("EE", "FI", "LT", "LV")
 
 
-VALIDATION_EXPRESSION = " AND ".join(
-    f"({rule})"
-    for rule in VALIDATION_RULES.values()
+VALID_COUNTRY = (
+    "country IN ('EE', 'FI', 'LT', 'LV')"
+)
+
+VALID_TIMESTAMP = (
+    "price_timestamp IS NOT NULL "
+    "AND price_timestamp > 0"
+)
+
+VALID_PRICE = (
+    "price IS NOT NULL "
+    "AND price BETWEEN -500 AND 4000"
+)
+
+VALID_BATCH_ID = (
+    "batch_id IS NOT NULL "
+    "AND batch_id <> ''"
+)
+
+VALID_FETCHED_AT = (
+    "fetched_at IS NOT NULL "
 )
 
 
-def quarantine_reason_expression():
+ALL_VALID = " AND ".join([
+    f"({VALID_COUNTRY})",
+    f"({VALID_TIMESTAMP})",
+    f"({VALID_PRICE})",
+    f"({VALID_BATCH_ID})",
+    f"({VALID_FETCHED_AT})",
+])
+
+
+def quarantine_reason():
     return (
         F.when(
-            ~F.expr(VALIDATION_RULES["valid_country"]),
+            ~F.expr(VALID_COUNTRY),
             F.lit("invalid_country"),
         )
         .when(
-            ~F.expr(VALIDATION_RULES["valid_price_timestamp"]),
-            F.lit("invalid_price_timestamp"),
+            ~F.expr(VALID_TIMESTAMP),
+            F.lit("invalid_timestamp"),
         )
         .when(
-            ~F.expr(VALIDATION_RULES["valid_price"]),
+            ~F.expr(VALID_PRICE),
             F.lit("invalid_price"),
         )
         .when(
-            ~F.expr(VALIDATION_RULES["valid_batch_id"]),
+            ~F.expr(VALID_BATCH_ID),
             F.lit("invalid_batch_id"),
         )
         .when(
-            ~F.expr(VALIDATION_RULES["valid_fetched_at"]),
+            ~F.expr(VALID_FETCHED_AT),
             F.lit("invalid_fetched_at"),
         )
-        .otherwise(F.lit(None).cast("string"))
+        .otherwise(
+            F.lit(None).cast("string")
+        )
     )
 
 
 @dp.temporary_view(
     name="stg_nordpool_silver_base",
     comment=(
-        "Typed and enriched Nord Pool observations with validation "
-        "status for routing to valid silver or quarantine."
+        "Typed and enriched Nord Pool observations with shared "
+        "quality expectations."
     ),
 )
-@dp.expect_all(VALIDATION_RULES)
+@dp.expect(
+    "valid_country",
+    VALID_COUNTRY,
+)
+@dp.expect(
+    "valid_price_timestamp",
+    VALID_TIMESTAMP,
+)
+@dp.expect(
+    "valid_price",
+    VALID_PRICE,
+)
+@dp.expect(
+    "valid_batch_id",
+    VALID_BATCH_ID,
+)
+@dp.expect(
+    "valid_fetched_at",
+    VALID_FETCHED_AT,
+)
 def stg_nordpool_silver_base():
     return (
         dp.read("bronze_nordpool_prices")
@@ -79,8 +113,8 @@ def stg_nordpool_silver_base():
             "price_timestamp_utc",
             F.to_timestamp(
                 F.from_unixtime(
-                    F.col("price_timestamp")
-                )
+                    F.col("price_timestamp"),
+                ),
             ),
         )
         .withColumn(
@@ -114,7 +148,7 @@ def stg_nordpool_silver_base():
             F.round(
                 F.col("price") / F.lit(1000),
                 5,
-            ),
+            )
         )
         .withColumn(
             "start_time",
@@ -144,12 +178,8 @@ def stg_nordpool_silver_base():
             "end_time",
         )
         .withColumn(
-            "is_valid",
-            F.expr(VALIDATION_EXPRESSION),
-        )
-        .withColumn(
             "quarantine_reason",
-            quarantine_reason_expression(),
+            quarantine_reason(),
         )
     )
 
@@ -161,20 +191,21 @@ def stg_nordpool_silver_base():
         "and reprocessing."
     ),
 )
-@dp.expect(
-    "quarantine_record_is_invalid",
-    "is_valid = false",
-)
 def silver_nordpool_prices_quarantine():
     return (
         dp.read("stg_nordpool_silver_base")
-        .filter(~F.col("is_valid"))
+        .filter(
+            F.col("quarantine_reason").isNotNull()
+        )
         .select(
             "batch_id",
             "fetched_at_utc",
+            "fetched_at",
             "source_api",
             "country",
             "price_timestamp",
+            "price_timestamp_utc",
+            "price_timestamp_vilnius",
             "price",
             "price_eur_mwh",
             "price_eur_kwh",
@@ -188,19 +219,18 @@ def silver_nordpool_prices_quarantine():
 @dp.materialized_view(
     name="silver_nordpool_prices",
     comment=(
-        "Validated and deduplicated Nord Pool electricity prices. "
-        "The latest valid observation is retained for each country "
-        "and delivery timestamp."
+        "Validated and deduplicated current Nord Pool prices. "
+        "The latest valid observation wins for each country and "
+        "delivery timestamp."
     ),
 )
-@dp.expect(
-    "silver_record_is_valid",
-    "is_valid = true",
-)
 def silver_nordpool_prices():
+
     valid_records = (
         dp.read("stg_nordpool_silver_base")
-        .filter(F.col("is_valid"))
+        .filter(
+            F.col("quarantine_reason").isNull()
+        )
     )
 
     latest_record_window = (
@@ -220,7 +250,7 @@ def silver_nordpool_prices():
         .withColumn(
             "_row_number",
             F.row_number().over(
-                latest_record_window
+                latest_record_window,
             ),
         )
         .filter(
@@ -228,7 +258,6 @@ def silver_nordpool_prices():
         )
         .drop(
             "_row_number",
-            "is_valid",
             "quarantine_reason",
         )
         .select(

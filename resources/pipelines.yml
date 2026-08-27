@@ -13,6 +13,8 @@ resources:
             path: ../src/pipelines/bronze_nordpool.py
         - file:
             path: ../src/pipelines/silver_nordpool.py
+        - file:
+            path: ../src/pipelines/gold_nordpool.py            
       configuration:
         nordpool.landing_table: ${var.catalog}.${var.schema_name}.${var.landing_table}
         nordpool.window_days_back: ${var.window_days_back}

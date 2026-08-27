@@ -37,6 +37,9 @@ variables:
     description: Job schedule state
     default: PAUSED
 
+  alert_email:
+    description: Email recipient for failed production workflow notifications    
+
 targets:
   dev:
     default: true
@@ -61,3 +64,13 @@ targets:
       api_base_url: https://dashboard.elering.ee/api/nps/price
       pipeline_development: "false"
       schedule_pause_status: UNPAUSED
+      
+    resources:
+      jobs:
+        nordpool_daily_job:
+          email_notifications:
+            on_failure:
+              - ${var.alert_email}
+
+          notification_settings:
+            no_alert_for_skipped_runs: true      

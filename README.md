@@ -68,6 +68,7 @@ gold_nordpool_daily_summary
 - Latest-record selection across overlapping API batches
 - Daily average, minimum, maximum, and interval-count gold metrics
 - Databricks Asset Bundles deployment targets for development and production
+- Failure notifications and retry policies for scheduled workflow tasks
 
 ## Project Structure
 
@@ -113,6 +114,12 @@ databricks auth login --host https://<your-workspace-host>
 databricks bundle validate -t dev
 databricks bundle deploy -t dev
 databricks bundle run nordpool_daily_job -t dev
+```
+
+Before deploying the Production target add failure notifications email:
+
+```bash
+export BUNDLE_VAR_alert_email="your-alert-recipient@example.com"
 ```
 
 The scheduled workflow runs in this order:

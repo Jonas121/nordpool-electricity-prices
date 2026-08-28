@@ -44,6 +44,9 @@ targets:
   dev:
     default: true
 
+    workspace:
+      host: ${env.DATABRICKS_DEV_HOST}
+
     variables:
       catalog: workspace
       schema_name: nordpool_dev
@@ -53,8 +56,26 @@ targets:
       pipeline_development: "true"
       schedule_pause_status: PAUSED
 
+  staging:
+    mode: production
+
+    workspace:
+      host: ${env.DATABRICKS_STAGING_HOST}
+
+    variables:
+      catalog: workspace
+      schema_name: nordpool_staging
+      window_days_back: "2"
+      window_days_forward: "2"
+      api_base_url: https://dashboard.elering.ee/api/nps/price
+      pipeline_development: "false"
+      schedule_pause_status: PAUSED      
+
   prod:
     mode: production
+
+    workspace:
+      host: ${env.DATABRICKS_PROD_HOST}
 
     variables:
       catalog: workspace

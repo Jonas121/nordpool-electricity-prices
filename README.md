@@ -76,6 +76,11 @@ gold_nordpool_daily_summary
 
 ```text
 .
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       ├── deploy-staging.yml
+│       └── deploy-prod.yml
 ├── databricks.yml
 ├── resources/
 │   ├── job.yml
@@ -89,6 +94,14 @@ gold_nordpool_daily_summary
 │       ├── silver_nordpool.py
 │       └── gold_nordpool.py
 └── tests/
+    ├── integration/
+    │   └── test_landing_ingestion.py
+    ├── smoke/
+    │   └── test_nordpool_api.py.ipynb
+    └── unit/
+        ├── test_ingest_nordpool_landing.py
+        ├── test_nordpool_api.py
+        └── test_silver_transform.py
 ```
 
 ## Quick Start

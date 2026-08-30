@@ -111,7 +111,8 @@ databricks auth login --host https://<your-workspace-host>
 ### Validate and deploy
 
 ```bash
-export BUNDLE_VAR_alert_email="your-alert-recipient@example
+export DATABRICKS_HOST="https://your-workspace-host.cloud.databricks.com"
+export BUNDLE_VAR_alert_email="your-alert-recipient@example.com"
 databricks bundle validate -t dev
 databricks bundle deploy -t dev
 databricks bundle run nordpool_daily_job -t dev

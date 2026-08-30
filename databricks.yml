@@ -44,9 +44,6 @@ targets:
   dev:
     default: true
 
-    workspace:
-      host: ${env.DATABRICKS_DEV_HOST}
-
     variables:
       catalog: workspace
       schema_name: nordpool_dev
@@ -59,9 +56,6 @@ targets:
   staging:
     mode: production
 
-    workspace:
-      host: ${env.DATABRICKS_STAGING_HOST}
-
     variables:
       catalog: workspace
       schema_name: nordpool_staging
@@ -73,9 +67,6 @@ targets:
 
   prod:
     mode: production
-
-    workspace:
-      host: ${env.DATABRICKS_PROD_HOST}
 
     variables:
       catalog: workspace

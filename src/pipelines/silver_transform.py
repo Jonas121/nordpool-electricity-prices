@@ -129,15 +129,3 @@ def select_valid(df: DataFrame) -> DataFrame:
 def select_invalid(df: DataFrame) -> DataFrame:
     """Filter to records with a quarantine reason (validation failed)."""
     return df.filter(F.col("quarantine_reason").isNotNull())
-
-
-def apply_expectations(df: DataFrame) -> DataFrame:
-    """
-    Apply all expectations to the DataFrame and return it.
-
-    Each expectation is registered via df.expect(condition, message).
-    Conditions mirror the quarantine validation logic exactly.
-    """
-    for condition, message in EXPECTATIONS:
-        df.expect(condition, message)
-    return df

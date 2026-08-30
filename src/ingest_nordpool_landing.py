@@ -73,13 +73,17 @@ def run_ingestion(
     spark = SparkSession.getActiveSession()
     if spark is None:
         spark = SparkSession.builder.getOrCreate()
-    (
-        spark.createDataFrame(rows, schema=LANDING_SCHEMA)
-        .write
-        .format("delta")
-        .mode("append")
-        .save(landing_table)
+    writer = (
+      spark.createDataFrame(rows, schema=LANDING_SCHEMA)
+      .write
+      .format("delta")
+      .mode("append")
     )
+    # Use .save() for file paths, .saveAsTable() for Unity Catalog tables
+    if "/" in landing_table or "\\" in landing_table:
+      writer.save(landing_table)
+    else:
+      writer.saveAsTable(landing_table)
 
 
 def parse_args() -> argparse.Namespace:

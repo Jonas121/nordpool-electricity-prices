@@ -1,0 +1,59 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test before staging deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest tests/unit tests/integration -v
+
+  deploy:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    needs: test
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: databricks/setup-cli@main
+
+      - name: Validate staging bundle
+        env:
+          DATABRICKS_STAGING_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_STAGING }}
+        run: databricks bundle validate -t staging
+
+      - name: Deploy staging bundle
+        env:
+          DATABRICKS_STAGING_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_STAGING }}
+        run: databricks bundle deploy -t staging
+
+      - name: Run staging workflow
+        env:
+          DATABRICKS_STAGING_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_STAGING }}
+        run: databricks bundle run nordpool_daily_job -t staging

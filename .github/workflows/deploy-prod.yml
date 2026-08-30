@@ -1,0 +1,34 @@
+name: Deploy Production
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy to production
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: databricks/setup-cli@main
+
+      - name: Validate production bundle
+        env:
+          DATABRICKS_PROD_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_PROD }}
+        run: databricks bundle validate -t prod
+
+      - name: Deploy production bundle
+        env:
+          DATABRICKS_PROD_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
+          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_PROD }}
+        run: databricks bundle deploy -t prod

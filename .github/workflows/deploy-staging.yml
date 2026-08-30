@@ -1,0 +1,65 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test before staging deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run tests
+        run: pytest tests/unit tests/integration -v
+
+  deploy:
+    name: Deploy to staging
+    runs-on: ubuntu-latest
+    needs: test
+    environment: staging
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: databricks/setup-cli@main
+
+      - name: Validate staging bundle
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+          BUNDLE_VAR_service_principal_name: ${{ secrets.SERVICE_PRINCIPAL_NAME }}
+          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_STAGING }}
+        run: databricks bundle validate -t staging
+
+      - name: Deploy staging bundle
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+          BUNDLE_VAR_service_principal_name: ${{ secrets.SERVICE_PRINCIPAL_NAME }}
+          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_STAGING }}
+        run: databricks bundle deploy -t staging
+
+      - name: Run staging workflow
+        env:
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+          BUNDLE_VAR_service_principal_name: ${{ secrets.SERVICE_PRINCIPAL_NAME }}
+          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_STAGING }}
+        run: databricks bundle run nordpool_daily_job -t staging

@@ -69,11 +69,18 @@ gold_nordpool_daily_summary
 - Daily average, minimum, maximum, and interval-count gold metrics
 - Databricks Asset Bundles deployment targets for development and production
 - Failure notifications and retry policies for scheduled workflow tasks
+- Unit and integration tests
+- CI/CD
 
 ## Project Structure
 
 ```text
 .
+├── .github/
+│   └── workflows/
+│       ├── ci.yml
+│       ├── deploy-staging.yml
+│       └── deploy-prod.yml
 ├── databricks.yml
 ├── resources/
 │   ├── job.yml
@@ -87,6 +94,14 @@ gold_nordpool_daily_summary
 │       ├── silver_nordpool.py
 │       └── gold_nordpool.py
 └── tests/
+    ├── integration/
+    │   └── test_landing_ingestion.py
+    ├── smoke/
+    │   └── test_nordpool_api.py.ipynb
+    └── unit/
+        ├── test_ingest_nordpool_landing.py
+        ├── test_nordpool_api.py
+        └── test_silver_transform.py
 ```
 
 ## Quick Start
@@ -112,11 +127,22 @@ databricks auth login --host https://<your-workspace-host>
 
 ```bash
 export DATABRICKS_HOST="https://your-workspace-host.cloud.databricks.com"
-export BUNDLE_VAR_alert_email="your-alert-recipient@example.com"
+
 databricks bundle validate -t dev
 databricks bundle deploy -t dev
 databricks bundle run nordpool_daily_job -t dev
 ```
+
+### CI/CD
+
+| Secret | Purpose |
+|---|---|
+| `DATABRICKS_HOST` | Databricks workspace host URL for API authentication |
+| `DATABRICKS_CLIENT_ID` | Service principal client ID for Databricks API authentication |
+| `DATABRICKS_CLIENT_SECRET` | Service principal client secret for Databricks API authentication |
+| `SERVICE_PRINCIPAL_NAME` | Name/ID of the service principal used for CI/CD deployments |
+| `ALERT_EMAIL_STAGING` | Email recipient for workflow alerts in staging environment |
+| `ALERT_EMAIL_PROD` | Email recipient for workflow alerts in production environment |
 
 The scheduled workflow runs in this order:
 
@@ -131,8 +157,8 @@ Environment-specific configuration is defined in
 | Setting | Development example |
 |---|---|
 | Catalog | `workspace` |
-| Schema | `nordpool_dev` |
-| Landing table | `workspace.nordpool_dev.landing_nordpool_api_batches` |
+| Schema | `nordpool_dev` - dev, `nordpool_staging` - staging, `nordpool` - production |
+| Landing table | `landing_nordpool_api_batches` |
 | Historical window | 2 days |
 | Forward window | 2 days |
 | Schedule | Paused by default |
@@ -166,8 +192,6 @@ consume only curated silver data.
 
 - [ ] Delivery-interval completeness checks
 - [ ] Price-correction monitoring
-- [ ] Automated unit and integration tests
-- [ ] CI/CD deployment through GitHub Actions
 
 ## License
 

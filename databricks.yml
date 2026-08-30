@@ -54,7 +54,6 @@ targets:
       schema_name: nordpool_dev
       window_days_back: "2"
       window_days_forward: "2"
-      api_base_url: https://dashboard.elering.ee/api/nps/price
       pipeline_development: "true"
       schedule_pause_status: PAUSED
 
@@ -69,7 +68,6 @@ targets:
       schema_name: nordpool_staging
       window_days_back: "2"
       window_days_forward: "2"
-      api_base_url: https://dashboard.elering.ee/api/nps/price
       pipeline_development: "false"
       schedule_pause_status: PAUSED      
 
@@ -94,7 +92,6 @@ targets:
       schema_name: nordpool
       window_days_back: "2"
       window_days_forward: "2"
-      api_base_url: https://dashboard.elering.ee/api/nps/price
       pipeline_development: "false"
       schedule_pause_status: UNPAUSED
       

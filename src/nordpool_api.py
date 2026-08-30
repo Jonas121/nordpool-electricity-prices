@@ -3,9 +3,15 @@
 import requests
 from datetime import datetime, timedelta, timezone
 
+__all__ = [
+    "DEFAULT_API_BASE_URL",
+    "fetch_elering_prices",
+]
+
 DEFAULT_API_BASE_URL = (
     "https://dashboard.elering.ee/api/nps/price"
 )
+
 
 def fetch_elering_prices(
     days_back: int = 2,
@@ -42,10 +48,18 @@ def fetch_elering_prices(
 
     for country_code, price_list in payload.get("data", {}).items():
         for record in price_list:
+            # Skip malformed records
+            try:
+                timestamp = int(record["timestamp"])
+                price = float(record["price"])
+            except (ValueError, TypeError, KeyError):
+                # Skip records with invalid timestamp or price
+                continue
+
             records.append({
                 "country": country_code.upper(),
-                "timestamp": int(record["timestamp"]),
-                "price": float(record["price"]),
+                "timestamp": timestamp,
+                "price": price,
                 "ingested_at": now_utc.isoformat(),
             })
 

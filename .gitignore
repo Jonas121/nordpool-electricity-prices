@@ -37,6 +37,8 @@ Thumbs.db
 # Python default
 # ==============================
 
+*.pyc
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]

@@ -1,0 +1,6 @@
+-r requirements.txt
+pytest>=7.0
+pytest-cov>=4.0
+pyspark==3.4.0 # PySpark 3.5+ has Spark Connect built-in and it's trying to use it by default giving errors
+delta-spark==2.4.0
+# databricks-connect only needed for CI/CD deployment, not local tests

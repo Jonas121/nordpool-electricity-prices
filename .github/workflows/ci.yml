@@ -39,7 +39,8 @@ jobs:
 
       - name: Validate DAB
         env:
-          DATABRICKS_DEV_HOST: ${{ secrets.DATABRICKS_HOST }}
-          DATABRICKS_TOKEN: ${{ secrets.DATABRICKS_TOKEN }}
-          BUNDLE_VAR_alert_email: ${{ secrets.ALERT_EMAIL_DEV }}
+          DATABRICKS_HOST: ${{ secrets.DATABRICKS_HOST }}
+          DATABRICKS_CLIENT_ID: ${{ secrets.DATABRICKS_CLIENT_ID }}
+          DATABRICKS_CLIENT_SECRET: ${{ secrets.DATABRICKS_CLIENT_SECRET }}
+          BUNDLE_VAR_service_principal_name: ${{ secrets.SERVICE_PRINCIPAL_NAME }}
         run: databricks bundle validate -t dev

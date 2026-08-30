@@ -39,6 +39,11 @@ variables:
 
   alert_email:
     description: Email recipient for failed production workflow notifications    
+    default: "" # Empty default makes it optional for dev
+
+  service_principal_name:
+    description: Service principal application ID for run_as identity (staging/prod only)
+    default: ""  # Empty default makes it optional for dev
 
 targets:
   dev:
@@ -56,6 +61,9 @@ targets:
   staging:
     mode: production
 
+    run_as:
+      service_principal_name: ${var.service_principal_name}    
+
     variables:
       catalog: workspace
       schema_name: nordpool_staging
@@ -65,8 +73,21 @@ targets:
       pipeline_development: "false"
       schedule_pause_status: PAUSED      
 
+    resources:
+      jobs:
+        nordpool_daily_job:
+          email_notifications:
+            on_failure:
+              - ${var.alert_email}
+
+          notification_settings:
+            no_alert_for_skipped_runs: true         
+
   prod:
     mode: production
+
+    run_as:
+      service_principal_name: ${var.service_principal_name}
 
     variables:
       catalog: workspace
